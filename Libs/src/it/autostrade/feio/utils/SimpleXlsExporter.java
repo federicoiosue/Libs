@@ -10,14 +10,21 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.util.CellRangeAddress;
+import org.apache.poi.ss.usermodel.Font;
 import org.javatuples.Triplet;
 
 
@@ -32,11 +39,15 @@ public class SimpleXlsExporter {
 	private int verticalOffset = 0;
 	private List<Triplet<String, Integer, Integer>> sheetHeader;
 	private String[] dataHeader;
+	private HSSFCellStyle sheetHeaderStyle;
+	private HSSFCellStyle dataHeaderStyle;
+	private HashMap<String, String> dataColumns;
 
 	public int getVerticalOffset() {
 		return verticalOffset;
 	}
 
+	
 	
 	/**
 	 * Imposta un offset verticale in celle da lasciare vuote dall'inizio del documento.
@@ -46,10 +57,12 @@ public class SimpleXlsExporter {
 		this.verticalOffset = verticalOffset;
 	}
 
+	
 	public List<Triplet<String, Integer, Integer>> getSheetHeader() {
 		return sheetHeader;
 	}
 
+	
 	/**
 	 * Imposta una riga di presentazione del documento [opizionale]
 	 * @param sheetHeader Tripletta contenente: testo, offset (in celle da sx), larghezza (in celle)
@@ -59,10 +72,33 @@ public class SimpleXlsExporter {
 	}
 
 
+	
 	public String[] getDataHeader() {
 		return this.dataHeader;
 	}
 
+	
+	
+	/**
+	 * Imposta un'intestazione per la tabella dei dati del file esportato [opzionale]
+	 * Questa riga contiene i nomi delle colonne della tabella.
+	 * @param header Mappa contenente il nome della colonna nel report ed il nome della colonna del ResultSet
+	 * @throws SQLException 
+	 */
+	public void setDataHeader(HashMap<String, String> header) throws SQLException {
+		// Salvataggio mappa campoResultSet-nomeColonna per usarlo alla creazione del report
+		dataColumns = header;
+		// Estrazione dei nomi delle colonne
+		String dataHeader = "";		
+		Iterator<?> it = header.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			dataHeader += "," + pair.getKey();
+		}
+		this.dataHeader = dataHeader.replaceFirst(",", "").split(",");
+	}
+
+	
 	
 	/**
 	 * Imposta un'intestazione per la tabella dei dati del file esportato [opzionale]
@@ -83,6 +119,7 @@ public class SimpleXlsExporter {
 	}
 	
 	
+	
 	/**
 	 * Imposta un'intestazione per la tabella dei dati del file esportato [opzionale]
 	 * Questa riga contiene i nomi delle colonne della tabella.
@@ -92,8 +129,51 @@ public class SimpleXlsExporter {
 	public void setDataHeader(String dataHeader) throws SQLException {
 		this.dataHeader = dataHeader.split(",");
 	}
+	
+	
+	
+	/**
+	 * Consente di personalizzare lo stile dellerighe di intestazione dello sheet
+	 * @param styles Array contente i possibili valori: 'bold', 'italic', 'underline'
+	 */
+	public void setSheetHeaderStyle(String[] styles) {
+		this.sheetHeaderStyle = setStyle(styles);
+	}
+	
+	
+	
+	/**
+	 * Consente di personalizzare lo stile dei nomi delle colonne della tabella dati
+	 * @param styles Array contente i possibili valori: 'bold', 'italic', 'underline'
+	 */
+	public void setDataHeaderStyle(String[] styles) {
+		dataHeaderStyle = setStyle(styles);
+	}
+	
+	
+	
+	/**
+	 * Personalizzazione stili testo
+	 * @param styles
+	 */
+	private HSSFCellStyle setStyle(String[] styles) {
+		HSSFCellStyle cellStyle = wb.createCellStyle();
+		HSSFFont font = wb.createFont();
+		for (String style : styles) {
+			if (style.toLowerCase().trim().equals("bold")) {
+				font.setBoldweight(Font.BOLDWEIGHT_BOLD);
+			} else if (style.toLowerCase().trim().equals("italic")) {
+				font.setItalic(true);
+			} else if (style.toLowerCase().trim().equals("underline")) {
+				font.setUnderline(HSSFFont.U_SINGLE);
+			}
+			cellStyle.setFont(font);
+		}
+		return cellStyle;		
+	}
 
 
+	
 	/**
 	 * Crea l'oggetto rappresentante il file excel a partire da una lista generica di oggetti dotati di metodi getters per ottenere i dati
 	 * @param list Lista di oggetti rappresentanti le righe del file excel
@@ -147,17 +227,22 @@ public class SimpleXlsExporter {
 		}
 	}
 
+	
 
 	/**
 	 * Creazione eventuale riga di intestazione dello sheet
 	 * @param report
 	 */
 	private void createSheetHeader(HSSFSheet report) {
+		HSSFCell cell;
 		if (this.sheetHeader != null) {
 			HSSFRow header = report.createRow(verticalOffset++);
 			for (Triplet<String, Integer, Integer> sheetHeaderElement : this.sheetHeader) {
 				report.addMergedRegion(new CellRangeAddress(header.getRowNum(), header.getRowNum(), sheetHeaderElement.getValue1(), sheetHeaderElement.getValue1() + sheetHeaderElement.getValue2() - 1));
-				header.createCell(sheetHeaderElement.getValue1()).setCellValue(new HSSFRichTextString(sheetHeaderElement.getValue0()));
+				cell = header.createCell(sheetHeaderElement.getValue1()); 
+				cell.setCellValue(new HSSFRichTextString(sheetHeaderElement.getValue0()));
+				if (sheetHeaderStyle != null)
+					cell.setCellStyle(sheetHeaderStyle);
 			}
 		}		
 	}
@@ -165,21 +250,27 @@ public class SimpleXlsExporter {
 	
 
 
+	
 	/**
 	 * Creazione eventuale riga di intestazione della tabella dati.
 	 * @param report
 	 */
 	private void createDataHeader(HSSFSheet report) {
+		HSSFCell cell;
 		if (this.dataHeader != null) {
 			HSSFRow header = report.createRow(verticalOffset++); 
 			int cellCol = 0;
 			for (String column : this.dataHeader) {
-				header.createCell(cellCol++).setCellValue(new HSSFRichTextString(column));
+				cell = header.createCell(cellCol++);
+				cell.setCellValue(new HSSFRichTextString(column));
+				if (dataHeaderStyle != null)
+					cell.setCellStyle(dataHeaderStyle);
 			}
 		}
 	}
 
 
+	
 	
 	/**
 	 * Crea l'oggetto rappresentante il file excel a partire da un ResultSet definendone automaticamente le colonne sulla base dei campi risultanti dalla query.
@@ -200,11 +291,19 @@ public class SimpleXlsExporter {
 		HSSFRow row;
 		String cellContent = "";
 
-		// Nomi dei campi del ResultSet
-		ResultSetMetaData rsmd = rs.getMetaData();
+		// Creazione della lista delle colonne...
 		List<String> fields = new ArrayList<String>();
-		for (int i = 1; i < rsmd.getColumnCount() + 1; i++) {
-			fields.add(rsmd.getColumnName(i));
+		// ...se disponibile utilizzando l'header ed i nomi dei campi del ResultSet forniti
+		if (dataColumns != null) {
+			for (String header: dataHeader) {
+				fields.add(dataColumns.get(header));
+			} 
+		} else {
+			// ...altrimenti viene effettuato un recupero automatico dei campi del ResultSet
+			ResultSetMetaData rsmd = rs.getMetaData();
+			for (int i = 1; i < rsmd.getColumnCount() + 1; i++) {
+				fields.add(rsmd.getColumnName(i));
+			}
 		}
 
 		// Cicla gli oggetti della lista per stamparne uno per riga
@@ -232,6 +331,18 @@ public class SimpleXlsExporter {
 				break;
 			}
 		}
+	}
+	
+	
+	
+	
+	/**
+	 * Blocca una riga o una colonna dello sheet
+	 * @param colSplit
+	 * @param rowSplit
+	 */
+	public void freezePane(int sheetNumber, int colSplit, int rowSplit){
+		wb.getSheetAt(sheetNumber).createFreezePane(colSplit, rowSplit);
 	}
 	
 	
@@ -277,6 +388,7 @@ public class SimpleXlsExporter {
 	}
 	
 	
+	
 	/**
 	 * Crea un file temporaneo col report e ne ritorna un handler. 
 	 * Viena automaticamente impostato per la cancellazione alla fine dell'esecuzione (se usato da Tomcat cancellare a mano).
@@ -296,6 +408,7 @@ public class SimpleXlsExporter {
 	}
 
 	
+	
 	/**
 	 * Invia al browser i dati per lo scaricamento del file
 	 * @param response
@@ -311,4 +424,5 @@ public class SimpleXlsExporter {
 		out.close();
 	}
 
+	
 }
