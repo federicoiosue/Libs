@@ -1,4 +1,4 @@
-package it.autostrade.feio.utils;
+package it.autostrade.feio.utils.obj;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;

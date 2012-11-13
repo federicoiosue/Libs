@@ -1,4 +1,4 @@
-package it.autostrade.feio.utils;
+package it.autostrade.feio.utils.db;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

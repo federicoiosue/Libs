@@ -1,4 +1,4 @@
-package it.autostrade.feio.utils;
+package it.autostrade.feio.utils.etc;
 
 
 public class SimpleTickerTask implements Runnable {

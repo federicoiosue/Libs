@@ -1,6 +1,6 @@
 package it.autostrade.feio.test;
 
-import it.autostrade.feio.utils.DateFormat;
+import it.autostrade.feio.utils.etc.DateFormat;
 
 public class TestDateFormat {
 

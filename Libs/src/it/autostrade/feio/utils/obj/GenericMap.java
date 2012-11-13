@@ -1,4 +1,4 @@
-package it.autostrade.feio.utils;
+package it.autostrade.feio.utils.obj;
 
 import java.util.ArrayList;
 import java.util.HashMap;

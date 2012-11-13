@@ -1,6 +1,6 @@
 package it.autostrade.feio.test;
 
-import it.autostrade.feio.utils.SimpleTickerTask;
+import it.autostrade.feio.utils.etc.SimpleTickerTask;
 
 public class TestMultithreadExecutor {
 

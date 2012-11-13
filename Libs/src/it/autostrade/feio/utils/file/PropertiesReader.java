@@ -1,4 +1,4 @@
-package it.autostrade.feio.utils;
+package it.autostrade.feio.utils.file;
 
 import java.io.File;
 import java.io.FileInputStream;

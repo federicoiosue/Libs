@@ -1,11 +1,11 @@
 package it.autostrade.feio.test;
 
+import it.autostrade.feio.utils.obj.ColorFactory;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
-import it.autostrade.feio.utils.ColorFactory;
 
 
 public class TestColorFactory {

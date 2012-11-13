@@ -1,7 +1,7 @@
 package it.autostrade.feio.test;
 
 import java.util.HashMap;
-import it.autostrade.feio.utils.GenericMap;
+import it.autostrade.feio.utils.obj.GenericMap;
 
 
 public class TestGenericMap {
