@@ -23,7 +23,7 @@ public class MapSplitter extends Object {
 
 		String[] a = s.toString().split(objectSeparator);
 
-		for (int i = a.length - 1; i >= 0; i--) {
+		for (int i = 0; i < a.length ; i++) {
 			String[] array = a[i].split(keyValueSeparator);
 			map.put(array[0], array[1]);
 		}
