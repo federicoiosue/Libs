@@ -58,8 +58,8 @@ public class HttpManager {
 	 * @return Stringa col contenuto della pagina
 	 * @throws Exception 
 	 */
-	public static String fetchUrl(String url) throws Exception {
-		return fetchUrl(url, "", 0, "", "");
+	public static String fetchUrl(String url, String encoding) throws Exception {
+		return fetchUrl(url, encoding, "", 0, "", "");
 	}
 
 
@@ -72,8 +72,8 @@ public class HttpManager {
 	 * @return Stringa col contenuto della pagina
 	 * @throws Exception
 	 */
-	public static String fetchUrl(String url, String proxy, int proxyPort) throws Exception {
-		return fetchUrl(url, proxy, proxyPort, "", "");
+	public static String fetchUrl(String url, String encoding, String proxy, int proxyPort) throws Exception {
+		return fetchUrl(url, encoding, proxy, proxyPort, "", "");
 	}
 
 
@@ -92,7 +92,7 @@ public class HttpManager {
 	 * @return Stringa col contenuto della pagina
 	 * @throws Exception 
 	 */
-	public static String fetchUrl(String url, String proxy, int proxyPort, String usr, String pwd) throws Exception {
+	public static String fetchUrl(String url, String encoding, String proxy, int proxyPort, String usr, String pwd) throws Exception {
 		HttpURLConnection conn = null;
 		String inputLine = null;
 		StringBuilder pageUrl = new StringBuilder();
@@ -110,7 +110,7 @@ public class HttpManager {
 			throw (e);
 		}
 		try {
-			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			in = new BufferedReader(new InputStreamReader(conn.getInputStream(), encoding));
 		} catch (Exception e) {
 			throw(e);
 		}
