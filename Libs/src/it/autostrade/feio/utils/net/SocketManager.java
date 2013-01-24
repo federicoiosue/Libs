@@ -28,6 +28,11 @@ public class SocketManager {
 	}
 	
 	
+	/**
+	 * Prova a chiudere una porta che al SO risulta utilizzata anche se il processo è stato terminato
+	 * @param port
+	 * @return
+	 */
 	public static boolean closePortForced(int port) {
 		boolean closed;
 		try {
@@ -42,22 +47,5 @@ public class SocketManager {
 		}
 		return closed;		
 	}
-	
-	
-	
-	public static void main(String[] args) {
-		int port = 5000;
-		try {
-			ServerSocket s = new ServerSocket(port);
-			s.setReuseAddress(true);
-			s.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println(isPortOpened(port));
-		System.out.println(closePortForced(port));
-		System.out.println(isPortOpened(port));
-	}
-	
+		
 }
