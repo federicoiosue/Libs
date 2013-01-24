@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,8 +42,9 @@ public class FileManager {
 			String line = null;
 			BufferedReader reader = null;
 			PrintWriter file = null;
-				file = new PrintWriter(new FileWriter(nomeFile));
-				reader = new BufferedReader(new InputStreamReader(is, "US-ASCII"));
+				String encoding = "UTF-8";
+				file = new PrintWriter(new File(nomeFile), encoding);
+				reader = new BufferedReader(new InputStreamReader(is, encoding));
 				if (reader != null) {
 					while ((line = reader.readLine()) != null) {
 						file.println(line);
@@ -69,27 +69,17 @@ public class FileManager {
 	 * @author 17000026 (Federico Iosue Sistemi&Servizi) 13/01/2012
 	 * @param str
 	 *              Stringa da scrivere su file
-	 * @param nomeFile
+	 * @param fileName
 	 *              Nome del file sul quale scrivere
 	 * @return true se l'operazione riesce, false altrimenti
 	 * @throws UnsupportedEncodingException
 	 * @throws IOException
 	 */
-	public static boolean write(String str, String nomeFile) throws UnsupportedEncodingException, IOException {
+	public static boolean write(String str, String fileName) throws UnsupportedEncodingException, IOException {
 		boolean result;
-		InputStream is;
-		try {
-			is = new ByteArrayInputStream(str.getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw (e);
-		}
-		try {
-			result = write(is, nomeFile);
-		} catch (UnsupportedEncodingException ee) {
-			throw (ee);
-		} catch (IOException ioe) {
-			throw (ioe);
-		}
+		InputStream is;		
+		is = new ByteArrayInputStream(str.getBytes("UTF-8"));
+		result = write(is, fileName);
 		return result;
 	}
 
@@ -109,7 +99,6 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	public static boolean write(List<String> list, String nomeFile, boolean newLine) throws UnsupportedEncodingException, IOException {
-		boolean result = false;
 		String listString = "";
 		Iterator<String> i = list.iterator();
 		while (i.hasNext()) {
@@ -117,14 +106,7 @@ public class FileManager {
 			if (newLine)
 				listString += System.getProperty("line.separator");
 		}
-		try {
-			result = write(listString, nomeFile);
-		} catch (UnsupportedEncodingException e) {
-			throw e;
-		} catch (IOException e) {
-			throw e;
-		}
-		return result;
+		return write(listString, nomeFile);
 	}
 
 
