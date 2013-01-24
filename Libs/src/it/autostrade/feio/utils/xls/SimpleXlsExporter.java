@@ -41,7 +41,7 @@ public class SimpleXlsExporter {
 	private String[] dataHeader;
 	private HSSFCellStyle sheetHeaderStyle;
 	private HSSFCellStyle dataHeaderStyle;
-	private HashMap<String, String> dataColumns;
+	private Map<String, String> dataColumns;
 
 	public int getVerticalOffset() {
 		return verticalOffset;
@@ -70,6 +70,26 @@ public class SimpleXlsExporter {
 	public void setSheetHeader(List<Triplet<String, Integer, Integer>> sheetHeader) {
 		this.sheetHeader = sheetHeader;
 	}
+	
+
+	
+	/**
+	 * Creazione eventuale riga di intestazione dello sheet
+	 * @param report
+	 */
+	private void createSheetHeader(HSSFSheet report) {
+		HSSFCell cell;
+		if (this.sheetHeader != null) {
+			HSSFRow header = report.createRow(verticalOffset++);
+			for (Triplet<String, Integer, Integer> sheetHeaderElement : this.sheetHeader) {
+				report.addMergedRegion(new CellRangeAddress(header.getRowNum(), header.getRowNum(), sheetHeaderElement.getValue1(), sheetHeaderElement.getValue1() + sheetHeaderElement.getValue2() - 1));
+				cell = header.createCell(sheetHeaderElement.getValue1()); 
+				cell.setCellValue(new HSSFRichTextString(sheetHeaderElement.getValue0()));
+				if (sheetHeaderStyle != null)
+					cell.setCellStyle(sheetHeaderStyle);
+			}
+		}		
+	}
 
 
 	
@@ -85,7 +105,7 @@ public class SimpleXlsExporter {
 	 * @param header Mappa contenente il nome della colonna nel report ed il nome della colonna del ResultSet
 	 * @throws SQLException 
 	 */
-	public void setDataHeader(HashMap<String, String> header) throws SQLException {
+	public void setDataHeader(Map<String, String> header) throws SQLException {
 		// Salvataggio mappa campoResultSet-nomeColonna per usarlo alla creazione del report
 		dataColumns = header;
 		// Estrazione dei nomi delle colonne
@@ -128,6 +148,25 @@ public class SimpleXlsExporter {
 	 */
 	public void setDataHeader(String dataHeader) throws SQLException {
 		this.dataHeader = dataHeader.split(",");
+	}
+
+	
+	/**
+	 * Creazione eventuale riga di intestazione della tabella dati.
+	 * @param report
+	 */
+	private void createDataHeader(HSSFSheet report) {
+		HSSFCell cell;
+		if (this.dataHeader != null) {
+			HSSFRow header = report.createRow(verticalOffset++); 
+			int cellCol = 0;
+			for (String column : this.dataHeader) {
+				cell = header.createCell(cellCol++);
+				cell.setCellValue(new HSSFRichTextString(column));
+				if (dataHeaderStyle != null)
+					cell.setCellStyle(dataHeaderStyle);
+			}
+		}
 	}
 	
 	
@@ -223,48 +262,6 @@ public class SimpleXlsExporter {
 			if (rowNum + 2 >= 65536) {
 				report.getRow(0).getCell(report.createRow(0).getLastCellNum() + 1).setCellValue(new HSSFRichTextString("ATTENZIONE: superato numero massimo righe del foglio Excel!!"));
 				break;
-			}
-		}
-	}
-
-	
-
-	/**
-	 * Creazione eventuale riga di intestazione dello sheet
-	 * @param report
-	 */
-	private void createSheetHeader(HSSFSheet report) {
-		HSSFCell cell;
-		if (this.sheetHeader != null) {
-			HSSFRow header = report.createRow(verticalOffset++);
-			for (Triplet<String, Integer, Integer> sheetHeaderElement : this.sheetHeader) {
-				report.addMergedRegion(new CellRangeAddress(header.getRowNum(), header.getRowNum(), sheetHeaderElement.getValue1(), sheetHeaderElement.getValue1() + sheetHeaderElement.getValue2() - 1));
-				cell = header.createCell(sheetHeaderElement.getValue1()); 
-				cell.setCellValue(new HSSFRichTextString(sheetHeaderElement.getValue0()));
-				if (sheetHeaderStyle != null)
-					cell.setCellStyle(sheetHeaderStyle);
-			}
-		}		
-	}
-	
-	
-
-
-	
-	/**
-	 * Creazione eventuale riga di intestazione della tabella dati.
-	 * @param report
-	 */
-	private void createDataHeader(HSSFSheet report) {
-		HSSFCell cell;
-		if (this.dataHeader != null) {
-			HSSFRow header = report.createRow(verticalOffset++); 
-			int cellCol = 0;
-			for (String column : this.dataHeader) {
-				cell = header.createCell(cellCol++);
-				cell.setCellValue(new HSSFRichTextString(column));
-				if (dataHeaderStyle != null)
-					cell.setCellStyle(dataHeaderStyle);
 			}
 		}
 	}

@@ -25,7 +25,7 @@ public class MapSplitter extends Object {
 
 		for (int i = 0; i < a.length ; i++) {
 			String[] array = a[i].split(keyValueSeparator);
-			map.put(array[0], array[1]);
+			map.put(array[0].trim(), array[1].trim());
 		}
 		return map;
 	}
