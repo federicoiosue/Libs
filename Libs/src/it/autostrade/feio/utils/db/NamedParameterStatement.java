@@ -40,6 +40,9 @@ public class NamedParameterStatement {
 	/** Maps parameter names to arrays of ints which are the parameter indices. */
 	private final Map indexMap;
 
+	/** Original query before variable parsing */
+	private String originalQuery;
+
 
 	/**
 	 * Creates a NamedParameterStatement. Wraps a call to c.{@link Connection#prepareStatement(java.lang.String) prepareStatement}.
@@ -53,6 +56,7 @@ public class NamedParameterStatement {
 	 */
 	public NamedParameterStatement(Connection connection, String query) throws SQLException {
 		indexMap = new HashMap();
+		originalQuery = query;
 		String parsedQuery = parse(query, indexMap);
 		statement = connection.prepareStatement(parsedQuery);
 	}
@@ -166,6 +170,7 @@ public class NamedParameterStatement {
 		for (int i = 0; i < indexes.length; i++) {
 			statement.setObject(indexes[i], value);
 		}
+		indexMap.put(name, value);
 	}
 
 
@@ -187,6 +192,7 @@ public class NamedParameterStatement {
 		for (int i = 0; i < indexes.length; i++) {
 			statement.setString(indexes[i], value);
 		}
+		indexMap.put(name, "'" + value + "'");
 	}
 
 
@@ -208,6 +214,7 @@ public class NamedParameterStatement {
 		for (int i = 0; i < indexes.length; i++) {
 			statement.setInt(indexes[i], value);
 		}
+		indexMap.put(name, value);
 	}
 
 
@@ -229,6 +236,7 @@ public class NamedParameterStatement {
 		for (int i = 0; i < indexes.length; i++) {
 			statement.setLong(indexes[i], value);
 		}
+		indexMap.put(name, value);
 	}
 
 
@@ -250,6 +258,7 @@ public class NamedParameterStatement {
 		for (int i = 0; i < indexes.length; i++) {
 			statement.setTimestamp(indexes[i], value);
 		}
+		indexMap.put(name, value);
 	}
 
 
@@ -337,4 +346,19 @@ public class NamedParameterStatement {
 	public int[] executeBatch() throws SQLException {
 		return statement.executeBatch();
 	}
+	
+	
+	public String dump() {
+		String query = null;
+		Iterator it = indexMap.entrySet().iterator();
+		Map.Entry pairs;
+		while (it.hasNext()) {
+			pairs = (Map.Entry) it.next();
+			query = originalQuery.replace(":" + pairs.getKey().toString(), pairs.getValue().toString());
+		}
+//		return indexMap.toString();
+		return query;
+	}
+	
+	
 }
