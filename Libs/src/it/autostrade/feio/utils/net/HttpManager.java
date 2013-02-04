@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Date;
 import org.apache.commons.net.util.Base64;
 
 
@@ -171,6 +174,57 @@ public class HttpManager {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+
+
+	/**
+	 * Recupero della data di ultima modifica di un file remoto tramite proxt
+	 * @param url URL del file
+	 * @param proxy Indirizzo proxy
+	 * @param proxyPort Porta proxy
+	 * @return Data di ultima modifica del file remoto
+	 * @throws MalformedURLException
+	 * @throws IOException
+	 */
+	public static Date getLastModified(String url, String proxy, int proxyPort) throws MalformedURLException, IOException {
+		return getLastModified(url, proxy, proxyPort, "", "");
+	}
+	
+	
+
+	/**
+	 * Recupero della data di ultima modifica di un file remoto tramite proxy con autenticazione
+	 * @param url URL del file
+	 * @param proxy Indirizzo proxy
+	 * @param proxyPort Porta proxy
+	 * @param usr Utente per autenticazione
+	 * @param pwd Password per autenticazione
+	 * @return Data di ultima modifica del file remoto
+	 * @throws MalformedURLException
+	 * @throws IOException
+	 */
+	public static Date getLastModified(String url, String proxy, int proxyPort, String usr, String pwd) throws MalformedURLException, IOException {
+		HttpURLConnection conn = null;
+
+		if (proxy != "")
+			conn = (HttpURLConnection) new URL(url).openConnection(useProxy(proxy, proxyPort));
+		else
+			conn = (HttpURLConnection) new URL(url).openConnection();
+		if (usr != "" && pwd != "") {
+			conn.setRequestProperty("Authorization", basicAuthString(usr, pwd));
+		}
+		conn.setRequestMethod("POST");
+
+		if (proxy != "")
+			conn = (HttpURLConnection) new URL(url).openConnection(useProxy(proxy, proxyPort));
+		else
+			conn = (HttpURLConnection) new URL(url).openConnection();
+		if (usr != "" && pwd != "") {
+			conn.setRequestProperty("Authorization", basicAuthString(usr, pwd));
+		}
+		Date d = new Date(conn.getLastModified());
+		return d;
 	}
 
 
