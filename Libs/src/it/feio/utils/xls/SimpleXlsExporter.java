@@ -10,11 +10,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -41,6 +40,7 @@ public class SimpleXlsExporter {
 	private String[] dataHeader;
 	private HSSFCellStyle sheetHeaderStyle;
 	private HSSFCellStyle dataHeaderStyle;
+	private HSSFCellStyle dataTableStyle;
 	private Map<String, String> dataColumns;
 
 	public int getVerticalOffset() {
@@ -118,7 +118,7 @@ public class SimpleXlsExporter {
 	 * @param header Mappa contenente il nome della colonna nel report ed il nome della colonna del ResultSet
 	 * @throws SQLException 
 	 */
-	public void setDataHeader(Map<String, String> header) throws SQLException {
+	public void setDataHeader(LinkedHashMap<String, String> header) throws SQLException {
 		// Salvataggio mappa campoResultSet-nomeColonna per usarlo alla creazione del report
 		dataColumns = header;
 		// Estrazione dei nomi delle colonne
@@ -186,7 +186,7 @@ public class SimpleXlsExporter {
 	
 	/**
 	 * Consente di personalizzare lo stile dellerighe di intestazione dello sheet
-	 * @param styles Array contente i possibili valori: 'bold', 'italic', 'underline'
+	 * @param styles Array contente i possibili valori: 'bold', 'italic', 'underline', 'center', 'right'
 	 */
 	public void setSheetHeaderStyle(String[] styles) {
 		this.sheetHeaderStyle = setStyle(styles);
@@ -200,6 +200,16 @@ public class SimpleXlsExporter {
 	 */
 	public void setDataHeaderStyle(String[] styles) {
 		dataHeaderStyle = setStyle(styles);
+	}
+	
+	
+	
+	/**
+	 * Consente di personalizzare lo stile dei nomi delle colonne della tabella dati
+	 * @param styles Array contente i possibili valori: 'bold', 'italic', 'underline', 'center', 'right'
+	 */
+	public void setDataTableStyle(String[] styles) {
+		dataTableStyle = setStyle(styles);
 	}
 	
 	
@@ -252,6 +262,7 @@ public class SimpleXlsExporter {
 		int cellNum = 0;
 		HSSFRow row;
 		Method method = null;
+		HSSFCell cell;
 		String cellContent = "";
 
 		// Cicla gli oggetti della lista per stamparne uno per riga
@@ -263,15 +274,22 @@ public class SimpleXlsExporter {
 			for (String methodName : methods) {
 				method = object.getClass().getMethod(methodName, new Class<?>[] {});
 				cellContent = method.invoke(object, new Object[] {}).toString();
+				cell = row.createCell(cellNum);
+				
 				// I numeri vengono tipizzati come tali nel foglio excel, se possibile
 				try {
-					row.createCell(cellNum).setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-					row.createCell(cellNum).setCellValue(Float.parseFloat(cellContent));
+					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					cell.setCellValue(Float.parseFloat(cellContent));
 				} catch (NumberFormatException e) {
-					row.createCell(cellNum).setCellValue(new HSSFRichTextString(cellContent));
+					cell.setCellValue(new HSSFRichTextString(cellContent));
 				} catch (NullPointerException e) {
-					row.createCell(cellNum).setCellValue(new HSSFRichTextString(""));
+					cell.setCellValue(new HSSFRichTextString(""));
 				}
+
+				// Stile del contenuto
+				if (sheetHeaderStyle != null)
+					cell.setCellStyle(dataTableStyle);
+				
 				cellNum++;
 			}
 
@@ -303,6 +321,7 @@ public class SimpleXlsExporter {
 		int rowNum = verticalOffset;
 		int cellNum = 0;
 		HSSFRow row;
+		HSSFCell cell;
 		String cellContent = "";
 
 		// Creazione della lista delle colonne...
@@ -328,14 +347,21 @@ public class SimpleXlsExporter {
 			// Cicla l'array con i nomi dei metodi e tramite reflection stampa in ogni cella della riga il dato opportuno controllando anche se si tratta di un numero
 			for (String field : fields) {				
 				cellContent = rs.getString(field);
+				cell = row.createCell(cellNum);
+				
 				try {
-					row.createCell(cellNum).setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-					row.createCell(cellNum).setCellValue(Float.parseFloat(cellContent));
+					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					cell.setCellValue(Float.parseFloat(cellContent));
 				} catch (NumberFormatException e) {
-					row.createCell(cellNum).setCellValue(new HSSFRichTextString(cellContent));
+					cell.setCellValue(new HSSFRichTextString(cellContent));
 				} catch (NullPointerException e) {
-					row.createCell(cellNum).setCellValue(new HSSFRichTextString(""));
+					cell.setCellValue(new HSSFRichTextString(""));
 				}
+				
+				// Stile del contenuto
+				if (sheetHeaderStyle != null)
+					cell.setCellStyle(dataTableStyle);
+				
 				cellNum++;
 			}
 
