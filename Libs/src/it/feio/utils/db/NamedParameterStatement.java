@@ -251,6 +251,28 @@ public class NamedParameterStatement {
 	 *               if an error occurred
 	 * @throws IllegalArgumentException
 	 *               if the parameter does not exist
+	 * @see PreparedStatement#setInt(int, int)
+	 */
+	public void setFloat(String name, float value) throws SQLException {
+		int[] indexes = getIndexes(name);
+		for (int i = 0; i < indexes.length; i++) {
+			statement.setFloat(indexes[i], value);
+		}
+		indexMap.put(name, value);
+	}
+
+
+	/**
+	 * Sets a parameter.
+	 * 
+	 * @param name
+	 *              parameter name
+	 * @param value
+	 *              parameter value
+	 * @throws SQLException
+	 *               if an error occurred
+	 * @throws IllegalArgumentException
+	 *               if the parameter does not exist
 	 * @see PreparedStatement#setTimestamp(int, java.sql.Timestamp)
 	 */
 	public void setTimestamp(String name, Timestamp value) throws SQLException {
