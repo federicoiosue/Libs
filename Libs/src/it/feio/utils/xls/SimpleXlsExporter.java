@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -15,15 +17,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.hssf.util.CellRangeAddress;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.javatuples.Triplet;
 
 
@@ -34,19 +35,26 @@ import org.javatuples.Triplet;
  */
 public class SimpleXlsExporter {
 
-	HSSFWorkbook wb = new HSSFWorkbook();
+	SXSSFWorkbook  wb = new SXSSFWorkbook();
 	private int verticalOffset = 0;
 	private List<Triplet<String, Integer, Integer>> sheetHeader;
 	private String[] dataHeader;
-	private HSSFCellStyle sheetHeaderStyle;
-	private HSSFCellStyle dataHeaderStyle;
-	private HSSFCellStyle dataTableStyle;
+	private CellStyle sheetHeaderStyle;
+	private CellStyle dataHeaderStyle;
+	private CellStyle dataTableStyle;
 	private Map<String, String> dataColumns;
+	private String defaultLinkString;
+	
 
+	
+	
+	public void setDefaultLinkString(String defaultLinkString) {
+		this.defaultLinkString = defaultLinkString;
+	}
+	
 	public int getVerticalOffset() {
 		return verticalOffset;
 	}
-
 	
 	
 	/**
@@ -90,14 +98,15 @@ public class SimpleXlsExporter {
 	 * Creazione eventuale riga di intestazione dello sheet
 	 * @param report
 	 */
-	private void createSheetHeader(HSSFSheet report) {
-		HSSFCell cell;
+	private void createSheetHeader(Sheet report) {
+		Cell cell;
 		if (this.sheetHeader != null) {
-			HSSFRow header = report.createRow(verticalOffset++);
+			Row header = report.createRow(verticalOffset++);
 			for (Triplet<String, Integer, Integer> sheetHeaderElement : this.sheetHeader) {
-				report.addMergedRegion(new CellRangeAddress(header.getRowNum(), header.getRowNum(), sheetHeaderElement.getValue1(), sheetHeaderElement.getValue1() + sheetHeaderElement.getValue2() - 1));
+				if (sheetHeaderElement.getValue2() > 1)
+					report.addMergedRegion(new CellRangeAddress(header.getRowNum(), header.getRowNum(), sheetHeaderElement.getValue1(), sheetHeaderElement.getValue1() + sheetHeaderElement.getValue2() - 1));
 				cell = header.createCell(sheetHeaderElement.getValue1()); 
-				cell.setCellValue(new HSSFRichTextString(sheetHeaderElement.getValue0()));
+				cell.setCellValue(new XSSFRichTextString(sheetHeaderElement.getValue0()));
 				if (sheetHeaderStyle != null)
 					cell.setCellStyle(sheetHeaderStyle);
 			}
@@ -125,6 +134,7 @@ public class SimpleXlsExporter {
 		String dataHeader = "";		
 		Iterator<?> it = header.entrySet().iterator();
 		while (it.hasNext()) {
+			@SuppressWarnings("rawtypes")
 			Map.Entry pair = (Map.Entry) it.next();
 			dataHeader += "," + pair.getKey();
 		}
@@ -168,14 +178,14 @@ public class SimpleXlsExporter {
 	 * Creazione eventuale riga di intestazione della tabella dati.
 	 * @param report
 	 */
-	private void createDataHeader(HSSFSheet report) {
-		HSSFCell cell;
+	private void createDataHeader(Sheet report) {
+		Cell cell;
 		if (this.dataHeader != null) {
-			HSSFRow header = report.createRow(verticalOffset++); 
+			Row header = report.createRow(verticalOffset++); 
 			int cellCol = 0;
 			for (String column : this.dataHeader) {
 				cell = header.createCell(cellCol++);
-				cell.setCellValue(new HSSFRichTextString(column));
+				cell.setCellValue(new XSSFRichTextString(column));
 				if (dataHeaderStyle != null)
 					cell.setCellStyle(dataHeaderStyle);
 			}
@@ -218,20 +228,20 @@ public class SimpleXlsExporter {
 	 * Personalizzazione stili testo
 	 * @param styles
 	 */
-	private HSSFCellStyle setStyle(String[] styles) {
-		HSSFCellStyle cellStyle = wb.createCellStyle();
-		HSSFFont font = wb.createFont();
+	private CellStyle setStyle(String[] styles) {
+		CellStyle cellStyle = wb.createCellStyle();
+		Font font = wb.createFont();
 		for (String style : styles) {
 			if (style.toLowerCase().trim().equals("bold")) {
 				font.setBoldweight(Font.BOLDWEIGHT_BOLD);
 			} else if (style.toLowerCase().trim().equals("italic")) {
 				font.setItalic(true);
 			} else if (style.toLowerCase().trim().equals("underline")) {
-				font.setUnderline(HSSFFont.U_SINGLE);
+				font.setUnderline(Font.U_SINGLE);
 			} else if (style.toLowerCase().trim().equals("center")) {
-				cellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+				cellStyle.setAlignment(CellStyle.ALIGN_CENTER);
 			} else if (style.toLowerCase().trim().equals("right")) {
-				cellStyle.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+				cellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
 			}  
 			cellStyle.setFont(font);
 		}
@@ -252,7 +262,7 @@ public class SimpleXlsExporter {
 	 */
 	public void createXls(List<?> list, String[] methods) throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 
-		HSSFSheet report = wb.createSheet();
+		Sheet report = wb.createSheet();
 		
 		createSheetHeader(report);
 		createDataHeader(report);
@@ -260,9 +270,9 @@ public class SimpleXlsExporter {
 		// Stampa del contenuto
 		int rowNum = 1;
 		int cellNum = 0;
-		HSSFRow row;
+		Row row;
 		Method method = null;
-		HSSFCell cell;
+		Cell cell;
 		String cellContent = "";
 
 		// Cicla gli oggetti della lista per stamparne uno per riga
@@ -278,16 +288,16 @@ public class SimpleXlsExporter {
 				
 				// I numeri vengono tipizzati come tali nel foglio excel, se possibile
 				try {
-					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 					cell.setCellValue(Float.parseFloat(cellContent));
 				} catch (NumberFormatException e) {
-					cell.setCellValue(new HSSFRichTextString(cellContent));
+					cell.setCellValue(new XSSFRichTextString(cellContent));
 				} catch (NullPointerException e) {
-					cell.setCellValue(new HSSFRichTextString(""));
+					cell.setCellValue(new XSSFRichTextString(""));
 				}
 
 				// Stile del contenuto
-				if (sheetHeaderStyle != null)
+				if (dataTableStyle != null)
 					cell.setCellStyle(dataTableStyle);
 				
 				cellNum++;
@@ -295,7 +305,7 @@ public class SimpleXlsExporter {
 
 			// Gestione file troppo grande
 			if (rowNum + 2 >= 65536) {
-				report.getRow(0).getCell(report.createRow(0).getLastCellNum() + 1).setCellValue(new HSSFRichTextString("ATTENZIONE: superato numero massimo righe del foglio Excel!!"));
+				report.getRow(0).getCell(report.createRow(0).getLastCellNum() + 1).setCellValue(new XSSFRichTextString("ATTENZIONE: superato numero massimo righe del foglio Excel!!"));
 				break;
 			}
 		}
@@ -312,7 +322,7 @@ public class SimpleXlsExporter {
 	 */
 	public void createXls(ResultSet rs) throws SQLException  {
 
-		HSSFSheet report = wb.createSheet();
+		Sheet report = wb.createSheet();
 
 		createSheetHeader(report);
 		createDataHeader(report);
@@ -320,8 +330,8 @@ public class SimpleXlsExporter {
 		// Stampa del contenuto
 		int rowNum = verticalOffset;
 		int cellNum = 0;
-		HSSFRow row;
-		HSSFCell cell;
+		Row row;
+		Cell cell;
 		String cellContent = "";
 
 		// Creazione della lista delle colonne...
@@ -344,22 +354,33 @@ public class SimpleXlsExporter {
 			row = report.createRow(rowNum++);
 			cellNum = 0;			
 			
-			// Cicla l'array con i nomi dei metodi e tramite reflection stampa in ogni cella della riga il dato opportuno controllando anche se si tratta di un numero
+			// Cicla l'array con i nomi dei metodi e tramite reflection stampa in ogni cella della riga il dato opportuno 
 			for (String field : fields) {				
 				cellContent = rs.getString(field);
 				cell = row.createCell(cellNum);
 				
 				try {
-					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-					cell.setCellValue(Float.parseFloat(cellContent));
+					// Automatic number content detection				
+					cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+					cell.setCellValue(Double.parseDouble(cellContent));
 				} catch (NumberFormatException e) {
-					cell.setCellValue(new HSSFRichTextString(cellContent));
+					// If automatic URLs parsing is set will be tried to insert a formula in the cell
+					if (defaultLinkString != null) {
+						try {
+							new URL(cellContent);
+							cell.setCellFormula("HYPERLINK(\"" + cellContent + "\", \"" + defaultLinkString + "\")");
+						} catch (MalformedURLException mue) {
+							cell.setCellValue(new XSSFRichTextString(cellContent));
+						}	
+					} else {
+						cell.setCellValue(new XSSFRichTextString(cellContent));						
+					}
 				} catch (NullPointerException e) {
-					cell.setCellValue(new HSSFRichTextString(""));
+					cell.setCellValue(new XSSFRichTextString(""));
 				}
 				
 				// Stile del contenuto
-				if (sheetHeaderStyle != null)
+				if (dataTableStyle != null)
 					cell.setCellStyle(dataTableStyle);
 				
 				cellNum++;
@@ -367,7 +388,7 @@ public class SimpleXlsExporter {
 
 			// Gestione file troppo grande
 			if (rowNum + 2 >= 65536) {
-				report.getRow(0).getCell(report.createRow(0).getLastCellNum() + 1).setCellValue(new HSSFRichTextString("ATTENZIONE: superato numero massimo righe del foglio Excel!!"));
+				report.getRow(0).getCell(report.createRow(0).getLastCellNum() + 1).setCellValue(new XSSFRichTextString("ATTENZIONE: superato numero massimo righe del foglio Excel!!"));
 				break;
 			}
 		}
@@ -394,13 +415,13 @@ public class SimpleXlsExporter {
 	 */
 	public String getCsv() {
 		StringBuilder sb = new StringBuilder();
-		HSSFSheet sheet = wb.getSheetAt(0);
+		Sheet sheet = wb.getSheetAt(0);
 
 		for (int i = 0; i <= sheet.getLastRowNum(); i++) {
-			HSSFRow row = sheet.getRow(i);
+			Row row = sheet.getRow(i);
 
 			for (int j = 0; j <= row.getLastCellNum(); j++) {
-				HSSFCell cell = row.getCell(j);
+				Cell cell = row.getCell(j);
 				try {
 					try {
 						sb.append("\"" + cell.getNumericCellValue() + "\",");
@@ -423,8 +444,8 @@ public class SimpleXlsExporter {
 	 * @return Handler del file temporaneo
 	 * @throws IOException
 	 */
-	public File getFile() throws IOException {
-		return getFile(null);
+	public File getTmpFile() throws IOException {
+		return getTmpFile(null);
 	}
 	
 	
@@ -436,15 +457,31 @@ public class SimpleXlsExporter {
 	 * @return
 	 * @throws IOException
 	 */
-	public File getFile(String fileName) throws IOException {
+	public File getTmpFile(String fileName) throws IOException {
 		if (fileName == null)
 			fileName = "export_";				
-		File f = File.createTempFile(fileName, ".xls");
+		File f = File.createTempFile(fileName, ".xlsx");
 		f.deleteOnExit();
 		FileOutputStream fos = new FileOutputStream(f);
 		wb.write(fos);
 		fos.close();
 		return f;
+	}
+	
+	
+	/**
+	 * Write excel document on physical file
+	 * @param path Path (with name) of target file
+	 * @throws IOException
+	 */
+	public void write(String path) throws IOException{
+//		Path from = Paths.get(path);
+//		Path to = Paths.get("dat/file.xls");
+//		Files.move(from, to, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		File f = new File(path);
+		FileOutputStream fos = new FileOutputStream(f);
+		wb.write(fos);
+		fos.close();
 	}
 
 	
