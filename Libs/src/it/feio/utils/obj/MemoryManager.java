@@ -1,17 +1,25 @@
 package it.feio.utils.obj;
 
 
-public class MemoryManager {
+/**
+ * Utility to force memory garbaging.
+ * Used in intense memory usage elaboration without the necessity  of performances.
+ * All measurements are made in bytes.
+ * @author 17000026 (Federico Iosue - Sistemi&Servizi) 19/apr/2013
+ *
+ */
+public class MemoryManager { 
 
-
-	public static double cleanMemory(long percentage) {
+	public static long cleanMemory(long percentage) {
+		Long startingMem = getMemoryUsage();
 		double freeMemory = (double) Runtime.getRuntime().freeMemory();
 		double totalMemory = (double) Runtime.getRuntime().totalMemory();
 		if (freeMemory / totalMemory * 100 < percentage) {
 			garbageCollect();
 			garbageCollect();
 		}
-		return (totalMemory - freeMemory);
+		Long EndingMem = getMemoryUsage();
+		return startingMem - EndingMem;
 	}
 
 	public static long getMemoryUsage() {
