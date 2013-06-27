@@ -12,10 +12,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -33,7 +35,10 @@ import org.javatuples.Triplet;
  * @author 17000026 (Federico Iosue - Sistemi&Servizi) 01/ago/2012
  *
  */
-public class SimpleXlsExporter {
+public class ExcelExporter {
+	
+	public final int CELL_TYPE_NUMERIC = 0;
+	public final int CELL_TYPE_URL = 1;	
 
 	SXSSFWorkbook  wb = new SXSSFWorkbook();
 	private int verticalOffset = 0;
@@ -44,6 +49,7 @@ public class SimpleXlsExporter {
 	private CellStyle dataTableStyle;
 	private Map<String, String> dataColumns;
 	private String defaultLinkString;
+	private TreeMap<String, Integer> columnsTypes = new TreeMap<String, Integer>(String.CASE_INSENSITIVE_ORDER);
 	
 
 	
@@ -119,6 +125,12 @@ public class SimpleXlsExporter {
 		return this.dataHeader;
 	}
 
+	
+	
+	@SuppressWarnings("unchecked")
+	public void setColumnsTypes(TreeMap<String, Integer> columnsTypes){		
+		this.columnsTypes = (TreeMap<String, Integer>)columnsTypes.clone();
+	}
 	
 	
 	/**
@@ -286,15 +298,7 @@ public class SimpleXlsExporter {
 				cellContent = method.invoke(object, new Object[] {}).toString();
 				cell = row.createCell(cellNum);
 				
-				// I numeri vengono tipizzati come tali nel foglio excel, se possibile
-				try {
-					cell.setCellType(Cell.CELL_TYPE_NUMERIC);
-					cell.setCellValue(Float.parseFloat(cellContent));
-				} catch (NumberFormatException e) {
-					cell.setCellValue(new XSSFRichTextString(cellContent));
-				} catch (NullPointerException e) {
-					cell.setCellValue(new XSSFRichTextString(""));
-				}
+				setCellValue(cell, cellContent);
 
 				// Stile del contenuto
 				if (dataTableStyle != null)
@@ -359,25 +363,7 @@ public class SimpleXlsExporter {
 				cellContent = rs.getString(field);
 				cell = row.createCell(cellNum);
 				
-				try {
-					// Automatic number content detection				
-					cell.setCellType(Cell.CELL_TYPE_NUMERIC);
-					cell.setCellValue(Double.parseDouble(cellContent));
-				} catch (NumberFormatException e) {
-					// If automatic URLs parsing is set will be tried to insert a formula in the cell
-					if (defaultLinkString != null) {
-						try {
-							new URL(cellContent);
-							cell.setCellFormula("HYPERLINK(\"" + cellContent + "\", \"" + defaultLinkString + "\")");
-						} catch (MalformedURLException mue) {
-							cell.setCellValue(new XSSFRichTextString(cellContent));
-						}	
-					} else {
-						cell.setCellValue(new XSSFRichTextString(cellContent));						
-					}
-				} catch (NullPointerException e) {
-					cell.setCellValue(new XSSFRichTextString(""));
-				}
+				setCellValue2(field, cell, cellContent);
 				
 				// Stile del contenuto
 				if (dataTableStyle != null)
@@ -393,10 +379,73 @@ public class SimpleXlsExporter {
 			}
 		}
 	}
+			
+	
+	private void setCellValue(Cell cell, String cellContent) {
+		try {
+			// Automatic number content detection				
+			cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+			cell.setCellValue(Double.parseDouble(cellContent));
+		} catch (NumberFormatException e) {
+			// If automatic URLs parsing is set will be tried to insert a formula in the cell
+			if (defaultLinkString != null) {
+				try {
+					new URL(cellContent);
+					cell.setCellFormula("HYPERLINK(\"" + cellContent + "\", \"" + defaultLinkString + "\")");
+				} catch (MalformedURLException mue) {
+					cell.setCellValue(new XSSFRichTextString(cellContent));
+				}	
+			} else {
+				cell.setCellValue(new XSSFRichTextString(cellContent));						
+			}
+		} catch (NullPointerException e) {
+			cell.setCellValue(new XSSFRichTextString(""));
+		}		
+	}
+			
+	
+	/**
+	 * Writes a value in a cell.
+	 * Typed columns are parsed in appropriate way
+	 * @param field Column name from database
+	 * @param cell The cell to be filled with content
+	 * @param cellContent Content of various type
+	 */
+	private void setCellValue2(String field, Cell cell, String cellContent) {
+		// Get the eventual type for the column
+		Integer type = columnsTypes.get(field);
+		// In case it is set an automatic parsing will be tried
+		if (type != null) {
+			try {
+				// Automatic number content detection
+				cell.setCellType(type);
+				if (type == CELL_TYPE_NUMERIC) {
+					cell.setCellValue(Double.parseDouble(cellContent));
+					return;
+					// Automatic URL content detection
+				} else if (type == CELL_TYPE_URL) {
+					new URL(cellContent);
+					// If default url text is set will be tried to be used as url visible text
+					if (defaultLinkString != null) {
+						cell.setCellFormula("HYPERLINK(\"" + cellContent + "\", \"" + defaultLinkString + "\")");
+					} else {
+						cell.setCellFormula("HYPERLINK(\"" + cellContent + "\", \"" + cellContent + "\")");
+					}
+					return;
+				}
+			} catch (NumberFormatException e) {} catch (MalformedURLException e) {}
+			// This automatically catch a null value generated by database extraction and replace it with empy cell
+			catch (NullPointerException e) {
+				cell.setCellValue(new XSSFRichTextString(""));
+			}
+		}
+		// In case of failure of any parsing the cell is filled with simple text
+		cell.setCellValue(new XSSFRichTextString(cellContent));
+	}
 	
 	
 	
-	
+
 	/**
 	 * Blocca una riga o una colonna dello sheet
 	 * @param colSplit

@@ -33,7 +33,7 @@ import com.itextpdf.text.pdf.PdfWriter;
  * @author 17000026 (Federico Iosue - Sistemi&Servizi) 16/apr/2013
  *
  */
-public class SimplePdfExporter extends PdfPageEventHelper {
+public class PdfExporter extends PdfPageEventHelper {
 	
 	final Rectangle DEFAULT_PAGE_SIZE = PageSize.A4;
 	final int DEFAULT_MARGIN_LEFT = 5;
@@ -61,7 +61,7 @@ public class SimplePdfExporter extends PdfPageEventHelper {
 	/**
 	 * Default constructor with predefined page size and margins
 	 */
-	public SimplePdfExporter(String file) {
+	public PdfExporter(String file) {
 		this.file = file;
 		doc = new Document(DEFAULT_PAGE_SIZE, DEFAULT_MARGIN_LEFT, DEFAULT_MARGIN_RIGHT, DEFAULT_MARGIN_TOP, DEFAULT_MARGIN_BOTTOM);
 	}
@@ -72,7 +72,7 @@ public class SimplePdfExporter extends PdfPageEventHelper {
 	 * @param pagesize
 	 * @return
 	 */
-	public SimplePdfExporter setPageSize(Rectangle pagesize) {
+	public PdfExporter setPageSize(Rectangle pagesize) {
 		doc.setPageSize(pagesize);
 		return this;
 	}
@@ -91,7 +91,7 @@ public class SimplePdfExporter extends PdfPageEventHelper {
 	 * @param bottom
 	 * @return
 	 */
-	public SimplePdfExporter setPageMargins(int left, int right, int top, int bottom) {
+	public PdfExporter setPageMargins(int left, int right, int top, int bottom) {
 		doc.setMargins(left, right, top, bottom);
 		return this;
 	}
@@ -291,11 +291,11 @@ public class SimplePdfExporter extends PdfPageEventHelper {
 					table.addCell(createCell(cellContent, dataStyle));
 					if (Runtime.getRuntime().freeMemory() < 200000) {
 						doc.add(table);
-						System.out.println(MemoryManager.cleanMemory(5));
+						System.out.println("Freed memory -> " + MemoryManager.cleanMemory(5)/1024 + "kb");
 						fos.flush();
 					}
 				} catch (OutOfMemoryError E) {
-					System.out.println("Fine memoria: " + Runtime.getRuntime().freeMemory() + " riga " + rs.getRow());
+					System.out.println("End of JVM memory -> " + Runtime.getRuntime().freeMemory() + " at row " + rs.getRow());
 				}
 			}
 		}
@@ -339,18 +339,32 @@ public class SimplePdfExporter extends PdfPageEventHelper {
 	@Override
 	public void onEndPage(PdfWriter writer, Document document) {
 		PdfPTable table;
-		if (pageHeader != null) {
-			table = new PdfPTable(1);
-			table.setTotalWidth(document.getPageSize().getWidth());
-			table.addCell(pageHeaderCell);
-			table.writeSelectedRows(0, -1,  document.getPageSize().getLeft(),  document.getPageSize().getTop(), writer.getDirectContent());			
-		}		
-		if (pageFooter != null) {
-			table = new PdfPTable(1);
-			table.setTotalWidth(document.getPageSize().getWidth());
-			table.addCell(pageFooterCell);
-			table.writeSelectedRows(0, -1,  document.getPageSize().getLeft(),  document.getPageSize().getBottom(), writer.getDirectContent());			
-		}	
+		if (pageHeader != null || pageFooter != null) {		
+			
+			float leftMargin = pageHeaderStyle.getMargins()[0];
+			float rightMargin = pageHeaderStyle.getMargins()[1];
+			float topMargin = pageHeaderStyle.getMargins()[2];
+			float bottomMargin = pageHeaderStyle.getMargins()[3];
+			float width = document.getPageSize().getWidth() - (document.leftMargin() + document.rightMargin());
+			
+			if (pageHeader != null) {
+				table = new PdfPTable(1);
+				table.setTotalWidth(width);
+				table.addCell(pageHeaderCell);
+				if (bottomMargin > 0) {
+					PdfPCell c = new PdfPCell();
+					c.setFixedHeight(bottomMargin);
+					table.addCell(c);
+				}
+				table.writeSelectedRows(0, -1,  document.getPageSize().getLeft() + leftMargin,  document.getPageSize().getTop() - document.topMargin(), writer.getDirectContent());			
+			}		
+			if (pageFooter != null) {
+				table = new PdfPTable(1);
+				table.setTotalWidth(width);
+				table.addCell(pageFooterCell);
+				table.writeSelectedRows(0, -1,  document.getPageSize().getLeft() + leftMargin,  document.getPageSize().getBottom() + document.bottomMargin() + pageFooterCell.getHeight(), writer.getDirectContent());			
+			}	
+		}
 	}
 
 //	@Override

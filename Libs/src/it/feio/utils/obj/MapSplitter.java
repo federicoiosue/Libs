@@ -1,7 +1,6 @@
 package it.feio.utils.obj;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class MapSplitter extends Object {
 
@@ -18,8 +17,8 @@ public class MapSplitter extends Object {
 		return null;
 	}
 
-	public static Map<String, String> split(CharSequence s) {
-		Map<String, String> map = new LinkedHashMap<String, String>();
+	public static LinkedHashMap<String, String> split(CharSequence s) {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 
 		String[] a = s.toString().split(objectSeparator);
 

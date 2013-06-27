@@ -1,25 +1,27 @@
 package it.feio.utils.test;
 
-import it.feio.utils.xml.XlsManager;
+import it.feio.utils.xls.XlsManager;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
 public class TestPOIChart {
 
 
 	public static void main(String[] args) {
 		
+		final String TEMPLATE = "./dat/template.xls";
+		
 		try {
 			
 			// Importa il template excel
-			XlsManager xls = new XlsManager("./dat/template.xls");
-			HSSFWorkbook wb = xls.getWorkbook();
+			XlsManager xls = new XlsManager(TEMPLATE);
+			Workbook wb = xls.getWorkbook();
 			
 			// Clona lo sheet vecchio e lo rinomina
-			HSSFSheet consecutivechart = wb.cloneSheet(1);
+			Sheet consecutivechart = wb.cloneSheet(1);
 			xls.rename(consecutivechart, "nuovo");
 			
 			// Converte i numeri in tipo numerico
@@ -35,6 +37,8 @@ public class TestPOIChart {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InvalidFormatException e) {
 			e.printStackTrace();
 		}
 

@@ -1,52 +1,39 @@
 package it.feio.utils.test;
 
-import java.util.Calendar;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import com.itextpdf.text.DocumentException;
 
 
 
 public class TestScratch {
 
-	
-	public static void main(String[] args) {
 
-		Date n = new Date(0);
-		System.out.println(n);
-		n = new Date();
-		System.out.println(n);
+
+	public static void main(String[] args) throws IOException, DocumentException, SQLException {
+
 		
-		Calendar c = Calendar.getInstance();
-		c.setTime(n);
-		c.set(Calendar.HOUR_OF_DAY, 0);
-		c.set(Calendar.MINUTE, 0);
-		c.set(Calendar.SECOND, 0);
-		System.out.println(c.getTime());
 		
-		c.setTime(n);
-		c.set(Calendar.HOUR_OF_DAY, 23);
-		c.set(Calendar.MINUTE, 59);
-		c.set(Calendar.SECOND, 59);
-		System.out.println(c.getTime());
+
 	}
-
 }
 
 
 
 class Persona {
 
-	public Persona() {}
-
-	public Persona(String name, String surname, String address, int age) {
-		super();
-		this.name = name;
-		this.surname = surname;
-		this.address = address;
-		this.age = age;
+	Persona(String nome, String cognome, int eta) {
+		this.nome = nome;
+		this.cognome = cognome;
+		this.eta = eta;
 	}
 
-	String name;
-	String surname;
-	String address;
-	int age;
+	String nome;
+	String cognome;
+	int eta;
 }
+
+

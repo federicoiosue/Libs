@@ -15,7 +15,7 @@ import it.feio.utils.db.NamedParameterStatement;
 import it.feio.utils.file.FileManager;
 import it.feio.utils.file.PropertiesReader;
 import it.feio.utils.net.ProxyDetector;
-import it.feio.utils.xls.SimpleXlsExporter;
+import it.feio.utils.xls.ExcelExporter;
 
 
 public class TestDatabaseManager {
@@ -24,6 +24,7 @@ public class TestDatabaseManager {
 	
 	public static void main(String[] args) {
 		Properties p = null;
+		it.feio.utils.db.NamedParameterStatement nps;
 		try {
 			p = PropertiesReader.parse(configFilePath);
 		} catch (IOException e) {
@@ -41,23 +42,56 @@ public class TestDatabaseManager {
 				e.printStackTrace();
 			}
 			
-			String sql = "SELECT * FROM BMTA.tbmt10_dat_met where rownum < :rownum";
+//			String sql = "SELECT * FROM BMTA.tbmt10_dat_met where rownum < :rownum";
+			
+			
+//			String sql = 	"SELECT" + 
+//					"	c_ads," + 
+//					"	c_att," + 
+//					"	c_kpi," + 
+//					"	d_ini_isp," + 
+//					"	'https://www1.gruppo.autostrade.it/BMA/CaricaFoto?cads='" + 
+//					"	||c_ads" + 
+//					"	||'&'||'diniisp='" + 
+//					"	||TO_CHAR(d_ini_isp, 'yyyymmddhh24miss')" + 
+//					"	||'&'||'catt='" + 
+//					"	||c_att" + 
+//					"	||'&'||'ckpi='" + 
+//					"	||c_kpi url" + 
+//					" FROM" + 
+//					"	BMAA.tbma19_fto_cat;";			
+			
+			String sql = 	"SELECT" + 
+					"	c_ads," + 
+					"	c_att," + 
+					"	c_kpi," + 
+					"	d_ini_isp," + 
+					"	'https://www1.gruppo.autostrade.it/BMA/CaricaFoto?cads='" + 
+					"	||c_ads" + 
+					"	||'&'||'diniisp='" + 
+					"	||TO_CHAR(d_ini_isp, 'yyyymmddhh24miss')" + 
+					"	||'&'||'catt='" + 
+					"	||c_att" + 
+					"	||'&'||'ckpi='" + 
+					"	||c_kpi url" + 
+					" FROM" + 
+					"	BMAA.tbma19_fto_cat";
 //			String sql = p.getProperty("sql");
 			
 //			PreparedStatement ps = conn.prepareStatement(sql);
 //			ResultSet rs = ps.executeQuery();
-			it.feio.utils.db.NamedParameterStatement nps = new NamedParameterStatement(conn, sql);
-			nps.setInt("rownum", 100);
+			nps = new NamedParameterStatement(conn, sql);
+//			nps.setInt("rownum", 100);
 			ResultSet rs = nps.executeQuery();
 			
-			SimpleXlsExporter sxe = new SimpleXlsExporter();
+			ExcelExporter sxe = new ExcelExporter();
 			
 			HashMap<String, String> header = new HashMap<String, String>();
 			sxe.setDataHeader(rs);
 			sxe.createXls(rs);
 			sxe.freezePane(0, 0, 1);
 			
-			File f = sxe.getFile("export.xls");
+			File f = sxe.getTmpFile();
 			File f1 = new File("dat/exp.xls");
 			FileManager.move(f, f1);
 			

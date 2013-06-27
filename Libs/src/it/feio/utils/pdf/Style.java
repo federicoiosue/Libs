@@ -15,14 +15,17 @@ import com.itextpdf.text.pdf.PdfPCell;
 public class Style {
 	
 	final float DEFAULT_BORDER = 0;
+	final float DEFAULT_MARGIN = 0;
 
 	private Font f;
 	private PdfPCell c;
+	private float margins[];
 
 	public Style() {
 		f = new Font();
 		c = new PdfPCell();
 		setBorders("", DEFAULT_BORDER, DEFAULT_BORDER, DEFAULT_BORDER, DEFAULT_BORDER);
+		setMargins(DEFAULT_MARGIN, DEFAULT_MARGIN, DEFAULT_MARGIN, DEFAULT_MARGIN);
 	}
 
 
@@ -68,6 +71,17 @@ public class Style {
 		c.setBorderWidthRight(right);
 		c.setBorderWidthTop(top);
 		c.setBorderWidthBottom(bottom);
+		return this;
+	}
+
+
+	public float[] getMargins() {
+		return margins;
+	}
+
+
+	public Style setMargins(float left, float right, float top, float bottom) {
+		this.margins = new float[]{left, right, top, bottom};
 		return this;
 	}
 
